@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Library</title>
+</head>
+<body>
+<h1>Smart Library</h1>
+
+<h2>Signup</h2>
+<input type="text" id="signupName" placeholder="Name">
+<input type="email" id="signupEmail" placeholder="Email">
+<input type="password" id="signupPassword" placeholder="Password">
+<button onclick="signup()">Signup</button>
+<p id="signupMsg"></p>
+
+<hr>
+
+<h2>Login</h2>
+<input type="email" id="loginEmail" placeholder="Email">
+<input type="password" id="loginPassword" placeholder="Password">
+<button onclick="login()">Login</button>
+<p id="loginMsg"></p>
+
+<hr>
+
+<h2>Borrow Book</h2>
+<input type="number" id="borrowBookId" placeholder="Book ID">
+<input type="number" id="borrowDays" placeholder="Days">
+<button onclick="borrowBook()">Borrow</button>
+<p id="borrowMsg"></p>
+
+<hr>
+
+<h2>Return Book</h2>
+<input type="number" id="returnBorrowId" placeholder="Borrow ID">
+<input type="date" id="returnDate">
+<button onclick="returnBook()">Return</button>
+<p id="returnMsg"></p>
+
+<hr>
+
+<h2>Borrow History</h2>
+<button onclick="getBorrows()">Get Borrows</button>
+<pre id="borrowsList"></pre>
+
+<script>
+let token = '';
+
+async function handleResponse(res) {
+    const text = await res.text();
+    try {
+        return JSON.parse(text);
+    } catch {
+        return { message: text };
+    }
+}
+
+// Signup
+async function signup() {
+    const res = await fetch('http://localhost:5000/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            name: signupName.value,
+            email: signupEmail.value,
+            password: signupPassword.value
+        })
+    });
+    const data = await handleResponse(res);
+    signupMsg.innerText = data.message;
+}
+
+// Login
+async function login() {
+    const res = await fetch('http://localhost:5000/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            email: loginEmail.value,
+            password: loginPassword.value
+        })
+    });
+    const data = await handleResponse(res);
+    loginMsg.innerText = data.message;
+    if (data.token) token = data.token;
+}
+
+// Borrow
+async function borrowBook() {
+    const res = await fetch('http://localhost:5000/borrow', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify({
+            book_id: borrowBookId.value,
+            days: borrowDays.value
+        })
+    });
+    const data = await handleResponse(res);
+    borrowMsg.innerText = data.message;
+}
+
+// Return
+async function returnBook() {
+    const res = await fetch(`http://localhost:5000/borrow/${returnBorrowId.value}/submit`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify({
+            return_date: returnDate.value
+        })
+    });
+    const data = await handleResponse(res);
+    returnMsg.innerText = data.message;
+}
+
+// History
+async function getBorrows() {
+    const res = await fetch('http://localhost:5000/borrow/history', {
+        headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await handleResponse(res);
+    borrowsList.innerText = JSON.stringify(data, null, 2);
+}
+</script>
+</body>
+</html>
